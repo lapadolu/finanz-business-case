@@ -12,7 +12,13 @@ export type Progresso = {
   lezioni: number; // lezioni completate, da 0 a LEZIONI.length
   quiz: boolean;
   kiwiExtra: number;
+  // Feature "Confronta la tua polizza"
+  premio?: string; // risposta al sondaggio di lezione 2
+  scadenza?: number; // mese di scadenza lasciato per il promemoria (0 = gennaio)
 };
+
+// Variante del test A/B: "oggi" è la schermata partner attuale, "nuova" la feature.
+export type Variante = "oggi" | "nuova";
 
 const VUOTO: Progresso = { lezioni: 0, quiz: false, kiwiExtra: 0 };
 const STORAGE = "finanz-prototipo-v2";
@@ -25,13 +31,16 @@ type Ctx = {
   completaLezione: (indice: number) => void;
   completaQuiz: (kiwi: number) => void;
   impostaProgresso: (p: Progresso) => void;
+  aggiornaProgresso: (campi: Partial<Progresso>) => void;
+  variante: Variante;
+  setVariante: (v: Variante) => void;
   track: (event: NomeEvento, properties?: Record<string, string | number>) => void;
   toast: (testo: string) => void;
 };
 
 const UtenteContext = createContext<Ctx | null>(null);
 
-type Salvato = { utenteId: string; progressi: Record<string, Progresso> };
+type Salvato = { utenteId: string; progressi: Record<string, Progresso>; variante?: Variante };
 
 function leggi(): Salvato | null {
   try {
@@ -44,6 +53,7 @@ function leggi(): Salvato | null {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [utenteId, setUtenteId] = useState(UTENTI[0].id);
+  const [variante, setVariante] = useState<Variante>("nuova");
   const [progressi, setProgressi] = useState<Record<string, Progresso>>({});
   const [messaggio, setMessaggio] = useState<string | null>(null);
   const [caricato, setCaricato] = useState(false);
@@ -55,6 +65,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (s && UTENTI.some((u) => u.id === s.utenteId)) setUtenteId(s.utenteId);
     if (s) setProgressi(s.progressi ?? {});
+    if (s?.variante) setVariante(s.variante);
     setCaricato(true);
   }, []);
 
@@ -62,9 +73,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!caricato) return;
     try {
-      localStorage.setItem(STORAGE, JSON.stringify({ utenteId, progressi } satisfies Salvato));
+      localStorage.setItem(STORAGE, JSON.stringify({ utenteId, progressi, variante } satisfies Salvato));
     } catch {}
-  }, [caricato, utenteId, progressi]);
+  }, [caricato, utenteId, progressi, variante]);
 
   const utente = UTENTI.find((u) => u.id === utenteId) ?? UTENTI[0];
   const progresso = progressi[utente.id] ?? VUOTO;
@@ -89,6 +100,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   const impostaProgresso = useCallback((p: Progresso) => aggiorna(() => p), [aggiorna]);
+  const aggiornaProgresso = useCallback((campi: Partial<Progresso>) => aggiorna((p) => ({ ...p, ...campi })), [aggiorna]);
 
   const setUtente = useCallback((id: string) => {
     if (UTENTI.some((u) => u.id === id)) setUtenteId(id);
@@ -102,9 +114,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         $os: utente.os,
         ramo: utente.ramo,
         onboarding_intent: utente.onboarding_intent,
+        variant: variante,
         ...properties,
       }),
-    [utente],
+    [utente, variante],
   );
 
   const toast = useCallback((testo: string) => {
@@ -115,7 +128,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <UtenteContext.Provider
-      value={{ utente, setUtente, progresso, kiwi, completaLezione, completaQuiz, impostaProgresso, track, toast }}
+      value={{
+        utente,
+        setUtente,
+        progresso,
+        kiwi,
+        completaLezione,
+        completaQuiz,
+        impostaProgresso,
+        aggiornaProgresso,
+        variante,
+        setVariante,
+        track,
+        toast,
+      }}
     >
       {children}
       {messaggio && (

@@ -45,6 +45,24 @@ lib/track.ts                     tracciamento eventi
 
 Cambia quello che vuoi: è un punto di partenza, non un vincolo.
 
+## La feature: "Metti alla prova la tua polizza"
+
+Metà di chi finisce il percorso ha già una polizza. Per loro il comparatore a fine percorso arriva nel momento sbagliato: possono cambiare solo alla scadenza. La feature dà loro un motivo per fermarsi adesso (vedere dove si posiziona la loro polizza rispetto al mercato) e ci lascia la data di scadenza, così li riportiamo al comparatore quando possono davvero cambiare.
+
+Dal pannello tester (striscia verde in Home) scegli la versione del test A/B: "Com'è oggi" o "Con la feature".
+
+| Cosa cambia | Dove | Nuovo evento |
+| --- | --- | --- |
+| Annuncio nella mappa: alla fine potrai confrontare la tua polizza | `app/percorso/page.tsx` | |
+| Lezione 2: il sondaggio diventa "Quanto paghi tu?", poi la forbice di mercato | `components/Schede.tsx` | `Survey Answered` |
+| Fine percorso: il bottone dice dove porta | `app/percorso/completato/page.tsx` | |
+| Schermata partner: chi ha già una polizza vede il confronto, gli altri il comparatore di oggi | `app/percorso/partner/page.tsx` | `Policy Check Started` |
+| Calcolatore: premio, franchigia, massimale, posizione rispetto al mercato | `app/percorso/confronta/page.tsx` | `Policy Check Completed` |
+| Richiesta del mese di scadenza per il promemoria | `app/percorso/confronta/page.tsx` | `Renewal Reminder Set` / `Skipped` |
+| Promemoria un mese prima della scadenza (simulato) | `app/percorso/promemoria/page.tsx` | `Renewal Reminder Opened` |
+
+Le forbici di prezzo in `lib/mercato.ts` sono simulate: nella realtà le fornirebbe il partner. I testi descrivono dove si posiziona la polizza e non dicono cosa fare, perché Finanz non è un intermediario.
+
 ## Pubblicare
 
 Il modo più rapido è Vercel: importa il tuo repo da https://vercel.com/new e pubblica. Il link che ti dà Vercel è quello da mandarci.

@@ -9,12 +9,12 @@ import { LEZIONI, PERCORSO } from "@/lib/percorso";
 // Strumenti per chi prova il prototipo: non esistono nell'app vera.
 // Cambi utente di prova e salti avanti nel percorso senza rifare tutte le lezioni.
 export function PannelloTester({ onClose }: { onClose: () => void }) {
-  const { utente, setUtente, impostaProgresso, toast } = useUtente();
+  const { utente, setUtente, impostaProgresso, variante, setVariante, progresso, toast } = useUtente();
   const router = useRouter();
 
   const salta = (lezioni: number, quiz: boolean, dove: string, messaggio: string) => {
     const kiwiExtra = LEZIONI.slice(0, lezioni).reduce((s, l) => s + l.kiwi, 0) + (quiz ? PERCORSO.kiwiTraguardo : 0);
-    impostaProgresso({ lezioni, quiz, kiwiExtra });
+    impostaProgresso(lezioni === 0 ? { lezioni, quiz, kiwiExtra } : { ...progresso, lezioni, quiz, kiwiExtra });
     onClose();
     toast(messaggio);
     router.push(dove);
@@ -39,6 +39,26 @@ export function PannelloTester({ onClose }: { onClose: () => void }) {
             </span>
             <span className="text-muted"> · {u.os} · ramo {NOME_RAMO[u.ramo]}</span>
             <span className="block text-sm">&quot;{u.onboarding_intent}&quot;</span>
+          </button>
+        ))}
+      </div>
+      <p className="mt-5 text-xs font-semibold tracking-wide text-muted uppercase">Versione del test A/B</p>
+      <div className="mt-2 grid grid-cols-2 gap-2 text-sm font-semibold">
+        {(
+          [
+            ["oggi", "Com'è oggi"],
+            ["nuova", "Con la feature"],
+          ] as const
+        ).map(([v, etichetta]) => (
+          <button
+            key={v}
+            onClick={() => {
+              setVariante(v);
+              toast(v === "nuova" ? "Versione con la feature" : "Versione di oggi");
+            }}
+            className={`rounded-2xl border-[1.5px] px-2 py-3 ${variante === v ? "border-green-600 bg-soft" : "border-line"}`}
+          >
+            {etichetta}
           </button>
         ))}
       </div>

@@ -10,7 +10,14 @@ export type NomeEvento =
   | "Partner Screen Viewed"
   | "Partner CTA Clicked"
   | "Quote Requested"
-  | "Policy Activated";
+  | "Policy Activated"
+  // Nuovi eventi della feature "Confronta la tua polizza"
+  | "Survey Answered"
+  | "Policy Check Started"
+  | "Policy Check Completed"
+  | "Renewal Reminder Set"
+  | "Renewal Reminder Skipped"
+  | "Renewal Reminder Opened";
 
 export type Evento = {
   event: NomeEvento;

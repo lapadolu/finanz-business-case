@@ -16,7 +16,8 @@ export type Card =
   | { tipo: "teoria"; emoji: string; titolo: string; lead: string; blocchi: Blocco[] }
   | { tipo: "domanda"; emoji: string; testo: string; risposte: string[]; corretta: number }
   | { tipo: "vero_falso"; emoji: string; testo: string; vero: boolean }
-  | { tipo: "sondaggio"; testo: string; risposte: string[] }
+  // premio: true = nella versione nuova diventa il sondaggio "Quanto paghi tu?" (vedi lib/mercato.ts)
+  | { tipo: "sondaggio"; testo: string; risposte: string[]; premio?: boolean }
   | { tipo: "simulatore"; emoji: string; testo: string; franchigia: number; massimale: number; dannoMax: number };
 
 export type Lezione = {
@@ -172,6 +173,7 @@ export const LEZIONI: Lezione[] = [
       },
       {
         tipo: "sondaggio",
+        premio: true,
         testo: "Sai quanto paghi ogni anno per le tue assicurazioni?",
         risposte: ["Sì, al centesimo", "Più o meno", "No, se ne occupa qualcun altro", "Non ne ho"],
       },

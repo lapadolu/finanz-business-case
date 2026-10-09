@@ -23,7 +23,7 @@ const NODI: Nodo[] = [
 ];
 
 export default function MappaPercorso() {
-  const { utente, progresso, track, toast } = useUtente();
+  const { utente, progresso, variante, track, toast } = useUtente();
   const router = useRouter();
 
   useEffect(() => {
@@ -76,6 +76,13 @@ export default function MappaPercorso() {
         <span className="mt-4 inline-block rounded-full bg-soft px-3 py-1 text-sm">
           📖 {LEZIONI.length} lezioni + quiz
         </span>
+        {/* Versione nuova: diciamo fin da subito cosa c'è alla fine, così non è una sorpresa. */}
+        {variante === "nuova" && (
+          <p className="mt-3 rounded-2xl bg-box-azzurro px-4 py-3 text-base leading-snug">
+            🔍 Alla fine potrai mettere alla prova la tua polizza: vedi dove si posiziona rispetto al mercato, a parità di
+            coperture. Se non ce l&apos;hai, puoi confrontare le offerte.
+          </p>
+        )}
 
         <div className="mt-10 flex items-center gap-3 rounded-2xl bg-soft px-3 py-3 font-semibold tracking-wide text-forest uppercase">
           <span className="grid size-12 place-items-center rounded-full bg-line text-2xl">🤓</span>

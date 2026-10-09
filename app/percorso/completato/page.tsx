@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUtente } from "@/components/Providers";
 import { Chip, Icona, PrimaryButton } from "@/components/ui";
 import { PERCORSO, QUIZ } from "@/lib/percorso";
+import { haPolizza } from "@/lib/mercato";
 
 export default function Page() {
   return (
@@ -15,7 +16,10 @@ export default function Page() {
 }
 
 function PercorsoCompletato() {
-  const { track, kiwi } = useUtente();
+  const { track, kiwi, utente, progresso, variante } = useUtente();
+  // Versione nuova: il bottone dice dove porta, niente sorprese.
+  const etichetta =
+    variante === "nuova" && haPolizza(utente.onboarding_intent, progresso.premio) ? "Metti alla prova la tua polizza" : "Prosegui";
   const router = useRouter();
   const punteggio = Number(useSearchParams().get("punteggio") ?? QUIZ.length);
   const tracciato = useRef(false);
@@ -69,7 +73,7 @@ function PercorsoCompletato() {
       </div>
 
       <div className="sticky bottom-0 px-4 pb-6">
-        <PrimaryButton onClick={() => router.push("/percorso/partner")}>Prosegui</PrimaryButton>
+        <PrimaryButton onClick={() => router.push("/percorso/partner")}>{etichetta}</PrimaryButton>
       </div>
     </div>
   );

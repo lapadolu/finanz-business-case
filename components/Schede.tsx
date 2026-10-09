@@ -3,6 +3,9 @@
 import { useState } from "react";
 import type { Blocco, Card } from "@/lib/percorso";
 import { BottomBar, Icona, IconaEsito, PrimaryButton, SheetScheda } from "@/components/ui";
+import { useUtente } from "@/components/Providers";
+import { NOME_RAMO } from "@/lib/utenti";
+import { FASCE, MERCATO, NON_CE_L_HO, NON_LO_SO, euro as euroMercato } from "@/lib/mercato";
 
 // Le card di una lezione, con lo stesso aspetto dell'app.
 // onAvanti viene chiamato quando l'utente può passare alla card successiva;
@@ -10,6 +13,7 @@ import { BottomBar, Icona, IconaEsito, PrimaryButton, SheetScheda } from "@/comp
 
 export function Scheda({ card, onAvanti }: { card: Card; onAvanti: (primaGiusta?: boolean) => void }) {
   if (card.tipo === "teoria") return <SchedaTeoria card={card} onAvanti={() => onAvanti()} />;
+  if (card.tipo === "sondaggio" && card.premio) return <SondaggioOPremio card={card} onAvanti={() => onAvanti()} />;
   if (card.tipo === "sondaggio") return <SchedaSondaggio card={card} onAvanti={() => onAvanti()} />;
   if (card.tipo === "simulatore") return <SchedaSimulatore card={card} onAvanti={() => onAvanti()} />;
   if (card.tipo === "vero_falso")
@@ -265,6 +269,102 @@ function SchedaSimulatore({ card, onAvanti }: { card: Extract<Card, { tipo: "sim
       <BottomBar>
         <PrimaryButton disabled={!mosso} onClick={onAvanti}>
           Continua
+        </PrimaryButton>
+      </BottomBar>
+    </>
+  );
+}
+
+// ---------- Feature "Confronta la tua polizza": il sondaggio di lezione 2 ----------
+
+// Nella versione "oggi" resta il sondaggio originale; nella "nuova" chiede quanto paghi tu
+// (un fatto tuo, quindi nessuno sbaglia) e poi mostra la forbice di mercato.
+function SondaggioOPremio({ card, onAvanti }: { card: Extract<Card, { tipo: "sondaggio" }>; onAvanti: () => void }) {
+  const { variante } = useUtente();
+  if (variante === "oggi") return <SchedaSondaggio card={card} onAvanti={onAvanti} />;
+  return <SondaggioPremio onAvanti={onAvanti} />;
+}
+
+function SondaggioPremio({ onAvanti }: { onAvanti: () => void }) {
+  const { utente, track, aggiornaProgresso } = useUtente();
+  const [scelta, setScelta] = useState<string | null>(null);
+  const [rivelato, setRivelato] = useState(false);
+  const ramo = NOME_RAMO[utente.ramo];
+  const forbice = MERCATO[utente.ramo];
+  const risposte = [...FASCE[utente.ramo], NON_LO_SO, NON_CE_L_HO];
+
+  if (rivelato) {
+    const lead =
+      scelta === NON_LO_SO
+        ? "Succede a tanti. La cifra la trovi nel contratto o nei pagamenti dell'ultimo rinnovo."
+        : scelta === NON_CE_L_HO
+          ? "Nessun problema: sapere quanto costa ti serve comunque."
+          : "Ecco come si posiziona chi ha una polizza come la tua.";
+    const chiusura =
+      scelta === NON_CE_L_HO
+        ? "Alla fine del percorso trovi uno strumento per confrontare le offerte, gratis e senza impegno."
+        : "Alla fine del percorso potrai inserire la tua polizza e vedere dove si posiziona rispetto al mercato, a parità di coperture.";
+    return (
+      <>
+        <div className="flex flex-col gap-4 px-4 pt-6 pb-8">
+          <h1 className="text-[34px] leading-tight font-bold tracking-tight">
+            <span className="mr-1">📊</span>E gli altri quanto pagano?
+          </h1>
+          <p className="text-lg leading-snug font-semibold">{lead}</p>
+          <p className="rounded-2xl bg-box-azzurro px-6 py-4 text-lg leading-relaxed">
+            Per una polizza {ramo}, sul mercato si spende di solito tra {euroMercato(forbice.min)} e {euroMercato(forbice.max)} all&apos;anno.
+          </p>
+          <p className="rounded-2xl bg-box-rosa px-6 py-4 text-lg leading-relaxed">
+            Il prezzo da solo però non dice tutto: conta anche cosa copre. Lo vediamo nelle prossime lezioni.
+          </p>
+          <p className="rounded-2xl bg-box-giallo px-6 py-4 text-lg leading-relaxed">{chiusura}</p>
+          <p className="text-sm text-muted">Prototipo: forbice di prezzo simulata.</p>
+        </div>
+        <BottomBar>
+          <PrimaryButton onClick={onAvanti}>Continua</PrimaryButton>
+        </BottomBar>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Riquadro
+        badge={
+          <span className="rounded-full bg-badge-sondaggio px-5 py-2 text-base font-bold tracking-tight uppercase">
+            💚 Piccolo sondaggio
+          </span>
+        }
+      >
+        <span className="text-[88px] leading-none">🐷</span>
+        <p className="text-center text-lg leading-snug font-semibold text-ink/80">
+          Quanto paghi all&apos;anno per la tua polizza {ramo}?
+        </p>
+        <div className="flex w-full flex-col gap-3">
+          {risposte.map((r) => (
+            <button
+              key={r}
+              onClick={() => setScelta(r)}
+              className={`w-full rounded-2xl border-[1.5px] px-4 py-4 text-center text-lg text-ink/80 transition active:scale-[0.98] ${
+                scelta === r ? "border-forest bg-soft" : "border-line"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </Riquadro>
+      <BottomBar>
+        <PrimaryButton
+          disabled={scelta === null}
+          onClick={() => {
+            if (!scelta) return;
+            track("Survey Answered", { survey: "premio_annuo", answer: scelta });
+            aggiornaProgresso({ premio: scelta });
+            setRivelato(true);
+          }}
+        >
+          Conferma risposta
         </PrimaryButton>
       </BottomBar>
     </>
